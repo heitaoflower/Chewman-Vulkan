@@ -170,11 +170,14 @@ std::shared_ptr<GameMap> GameMapLoader::loadMap(const std::string& filename, con
     tutorialData.clear();
     if (gameMap->name.find("Tutorial") != std::string::npos)
     {
-        for (auto i = 0; i < 4; ++i)
+        char tutorialNum = gameMap->name[10];
+        for (auto i = 0; i < 5; ++i)
         {
-            fin.getline(line, 90);
-            gameMap->tutorialText.emplace_back(line);
-            tutorialData.emplace_back(line);
+            std::stringstream ss;
+            ss << "Tutorial" << tutorialNum << "Line" << (i+1);
+            auto localizedTutorialLine = Game::getInstance()->getLocaleManager().getLocalizedString(ss.str());
+            gameMap->tutorialText.push_back(localizedTutorialLine);
+            tutorialData.push_back(localizedTutorialLine);
         }
         gameMap->hasTutorial = true;
     } else {
@@ -317,6 +320,7 @@ std::shared_ptr<GameMap> GameMapLoader::loadMap(const std::string& filename, con
     }
     gameMap->activeCoins = gameMap->coins.size();
     gameMap->totalCoins = gameMap->coins.size();
+    gameMap->eatenEnemies = 0;
 
     //fin.getline(line, 100);
     initMeshes(*gameMap, suffix);

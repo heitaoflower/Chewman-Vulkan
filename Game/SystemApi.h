@@ -34,6 +34,8 @@ enum class AchievementType : int
     Supernova,
     Gold_rush,
     Mission_accomplished,
+    Bomberman,
+    Predator
 };
 
 const std::string levelsProduct = "levels";
@@ -78,6 +80,7 @@ std::vector<std::pair<std::string, int>> getTimes(bool weekly);
 int getPlayerPlace(bool weekly);
 std::pair<std::string, int> getPlayerScore(bool weekly);
 std::string getPlayerName();
+std::string getLanguage();
 
 std::vector<uint8_t> encryptData(const std::vector<uint8_t>& data);
 std::vector<uint8_t> decryptData(const std::vector<uint8_t>& data);
@@ -90,6 +93,8 @@ void rateApp();
 
 void openLink(const std::string& link);
 void showMoreInfo();
+
+bool initAccelerometer();
 
 } // namespace System
 } // namespace Chewman

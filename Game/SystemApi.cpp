@@ -3,6 +3,8 @@
 // Licensed under the MIT License
 #include "SystemApi.h"
 #include <SDL2/SDL.h>
+#include <iostream>
+
 #ifdef __ANDROID__
 #include <jni.h>
 #endif
@@ -123,6 +125,7 @@ bool isItemBought(const std::string& id)
 #ifdef __ANDROID__
     if (id == "levels")
         return callBoolMethod("isCampaignPurchased");
+    return false;
 #else
     return isBought;
 #endif
@@ -265,6 +268,8 @@ std::string achivementTypeToId(AchievementType type)
         case AchievementType::Supernova: return  "achievement_supernova";
         case AchievementType::Gold_rush: return  "achievement_gold_rush";
         case AchievementType::Mission_accomplished: return  "achievement_mission_accomplished";
+        case AchievementType::Predator: return  "achievement_predator";
+        case AchievementType::Bomberman: return  "achievement_bomberman";
     }
 
     return "";
@@ -537,6 +542,45 @@ std::string getPlayerName()
 #endif
 }
 
+std::string getLanguage()
+{
+#ifdef __ANDROID__
+    JNIEnv* env = (JNIEnv*)SDL_AndroidGetJNIEnv();
+    jobject activity = (jobject)SDL_AndroidGetActivity();
+    jclass activityClass = env->GetObjectClass(activity);
+
+    jmethodID methodIdName = env->GetMethodID(activityClass, "getLanguage", "()Ljava/lang/String;");
+
+    auto nameObj = (jstring)env->CallObjectMethod(activity, methodIdName);
+    if (nameObj != nullptr) {
+        const char *name = env->GetStringUTFChars(nameObj, nullptr);
+
+        std::string result = name;
+
+        env->ReleaseStringUTFChars(nameObj, name);
+
+        env->DeleteLocalRef(nameObj);
+        env->DeleteLocalRef(activity);
+        env->DeleteLocalRef(activityClass);
+
+        return result;
+    } else {
+        env->DeleteLocalRef(activity);
+        env->DeleteLocalRef(activityClass);
+
+        return "en";
+    }
+#elif __linux__
+    std::string locale = setlocale(LC_CTYPE, "");
+    if (locale == "C")
+        return "en";
+
+    return locale.substr(0, 2);
+#else
+    return "en";
+#endif
+}
+
 std::vector<std::pair<std::string, int>> getTimes(bool weekly)
 {
     std::vector<std::pair<std::string, int>> scoresList;
@@ -684,7 +728,11 @@ void openLink(const std::string& link)
 #else
         "open ";
 #endif
-    system((openCommand + link).c_str());
+    auto result = system((openCommand + link).c_str());
+    if (result != 0)
+    {
+        std::cerr << "Can't open link" << std::endl;
+    }
 #endif
 }
 
@@ -704,6 +752,32 @@ void showMoreInfo()
 #else
     openLink("./resources/manual/readme.html");
 #endif
+}
+
+bool initAccelerometer()
+{
+#ifdef __ANDROID__
+    static bool accelInitialized = false;
+    if (accelInitialized)
+        return true;
+
+    for (auto i = 0; i < SDL_NumSensors(); ++i)
+    {
+        if (SDL_SensorGetDeviceType(i) == SDL_SENSOR_ACCEL)
+        {
+            SDL_Sensor *sensor = SDL_SensorOpen(i);
+            if (sensor == nullptr)
+            {
+                return false;
+            } else {
+                accelInitialized = true;
+                return true;
+            }
+        }
+    }
+#endif
+
+    return false;
 }
 
 } // namespace System
